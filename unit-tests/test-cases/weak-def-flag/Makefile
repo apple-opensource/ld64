@@ -45,4 +45,4 @@ all:
 	${PASS_IFF_GOOD_MACHO} main
 	
 clean:
-	rm main main-strip-weak
+	rm -f main main-strip-weak

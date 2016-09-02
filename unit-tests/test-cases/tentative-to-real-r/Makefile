@@ -32,10 +32,10 @@ run: all
 
 all:
 	${CC} ${CCFLAGS} test.c -c -o test.${ARCH}.o
-	${OBJECTDUMP} -no_content test.${ARCH}.o | grep -v kind: | grep -v section: > test.${ARCH}.o.dump
+	${OBJECTDUMP} -no_content -no_definition -no_section -no_combine test.${ARCH}.o  > test.${ARCH}.o.dump
 
 	${LD} -arch ${ARCH} -r -d test.${ARCH}.o -o test-r-d.${ARCH}.o
-	${OBJECTDUMP} -no_content test-r-d.${ARCH}.o | grep -v kind: | grep -v section: > test-r-d.${ARCH}.o.dump
+	${OBJECTDUMP} -no_content -no_definition -no_section -no_combine test-r-d.${ARCH}.o > test-r-d.${ARCH}.o.dump
 	
 	${PASS_IFF} diff test.${ARCH}.o.dump  test-r-d.${ARCH}.o.dump
 	

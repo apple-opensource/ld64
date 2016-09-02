@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2007 Apple Inc. All rights reserved.
+ * Copyright (c) 2005-2010 Apple Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
@@ -82,6 +82,9 @@ _test_branches:
 	@ call internal + addend
 	bne	_test_calls+16
 
+	@ call internal - addend
+	bne	_test_calls-16
+
 	@ call external
 	bne	_external
 	
@@ -92,6 +95,35 @@ _test_branches:
 	bl	  1f
 1:	nop
 
+
+	.globl	_test_weak
+	.weak_definition _test_weak
+_test_weak:
+	nop
+	nop
+
+	.globl	_test_hidden_weak
+	.private_extern _test_hidden_weak
+	.weak_definition _test_hidden_weak
+_test_hidden_weak:
+	nop
+	nop
+
+
+_test_weak_call:
+	bl	_test_weak
+	bl	_test_weak+4
+
+
+_test_weak_hidden_pointer_call:
+	ldr		r12,L3
+	add		r12, pc, r12
+	nop
+	bx		r12
+L101:	
+	.long	_test_hidden_weak - L101 
+	
+	
 	.text
 _pointer_diffs:
 	.long _foo-1b
@@ -100,6 +132,7 @@ _pointer_diffs:
 	.long _test_branches+3-1b
 	.long (_test_branches - _test_loads) + -2097152
 	.long (_test_calls - _test_loads) + -2097152 
+
 
 	.text
 	.code 32
@@ -178,8 +211,8 @@ L15:add	r3, pc
 	.align 2
 L16:	.long	_thumb1-(L12+8)
 L17:	.long	_thumb2-(L13+8)
-L17a:	.long	_thumb3-(L3+8)
-L17b:	.long	_thumb4-(L3+8)
+L17a:	.long	_thumb3-(L13+8)
+L17b:	.long	_thumb4-(L13+8)
 L18:	.long	_arm1-(L14+8)
 L19:	.long	_arm2-(L15+8)
 L19a:	.long	_arm3-(L15+8)
@@ -192,6 +225,81 @@ _myVTable:
 		.long	_thumb3
 		.long	_arm1
 		.long	_arm2
+
+#if __ARM_ARCH_7A__
+	.text
+		.align 2
+_arm16tests:
+       movw    r0, :lower16:_datahilo16
+       movt    r0, :upper16:_datahilo16
+       movw    r0, :lower16:_datahilo16+4
+       movt    r0, :upper16:_datahilo16+4
+       movw    r0, :lower16:_datahilo16alt
+       movt    r0, :upper16:_datahilo16alt
+       movw    r0, :lower16:_datahilo16alt+61440
+       movt    r0, :upper16:_datahilo16alt+61440
+       movw    r0, :lower16:_datahilo16alt+2048
+       movt    r0, :upper16:_datahilo16alt+2048
+       movw    r0, :lower16:_datahilo16alt+1792
+       movt    r0, :upper16:_datahilo16alt+1792
+       movw    r0, :lower16:_datahilo16alt+165
+       movt    r0, :upper16:_datahilo16alt+165
+Lpicbase:
+       movw    r0, :lower16:_datahilo16 - Lpicbase
+       movt    r0, :upper16:_datahilo16 - Lpicbase
+       movw    r0, :lower16:_datahilo16+4 - Lpicbase
+       movt    r0, :upper16:_datahilo16+4 - Lpicbase
+       movw    r0, :lower16:_datahilo16alt - Lpicbase
+       movt    r0, :upper16:_datahilo16alt - Lpicbase
+       movw    r0, :lower16:_datahilo16alt+61440 - Lpicbase
+       movt    r0, :upper16:_datahilo16alt+61440 - Lpicbase
+       movw    r0, :lower16:_datahilo16alt+2048 - Lpicbase
+       movt    r0, :upper16:_datahilo16alt+2048 - Lpicbase
+       movw    r0, :lower16:_datahilo16alt+1792 - Lpicbase
+       movt    r0, :upper16:_datahilo16alt+1792 - Lpicbase
+       movw    r0, :lower16:_datahilo16alt+165 - Lpicbase
+       movt    r0, :upper16:_datahilo16alt+165 - Lpicbase
+       bx      lr
+	   
+	.code 16
+	.thumb_func _thumb16tests
+_thumb16tests:
+       movw    r0, :lower16:_datahilo16
+       movt    r0, :upper16:_datahilo16
+       movw    r0, :lower16:_datahilo16+4
+       movt    r0, :upper16:_datahilo16+4
+       movw    r0, :lower16:_datahilo16alt
+       movt    r0, :upper16:_datahilo16alt
+       movw    r0, :lower16:_datahilo16alt+61440
+       movt    r0, :upper16:_datahilo16alt+61440
+       movw    r0, :lower16:_datahilo16alt+2048
+       movt    r0, :upper16:_datahilo16alt+2048
+       movw    r0, :lower16:_datahilo16alt+1792
+       movt    r0, :upper16:_datahilo16alt+1792
+       movw    r0, :lower16:_datahilo16alt+165
+       movt    r0, :upper16:_datahilo16alt+165
+Lpicbase2:
+       movw    r0, :lower16:_datahilo16 - Lpicbase2
+       movt    r0, :upper16:_datahilo16 - Lpicbase2
+       movw    r0, :lower16:_datahilo16+4 - Lpicbase2
+       movt    r0, :upper16:_datahilo16+4 - Lpicbase2
+       movw    r0, :lower16:_datahilo16alt - Lpicbase2
+       movt    r0, :upper16:_datahilo16alt - Lpicbase2
+       movw    r0, :lower16:_datahilo16alt+61440 - Lpicbase2
+       movt    r0, :upper16:_datahilo16alt+61440 - Lpicbase2
+       movw    r0, :lower16:_datahilo16alt+2048 - Lpicbase2
+       movt    r0, :upper16:_datahilo16alt+2048 - Lpicbase2
+       movw    r0, :lower16:_datahilo16alt+1792 - Lpicbase2
+       movt    r0, :upper16:_datahilo16alt+1792 - Lpicbase2
+       movw    r0, :lower16:_datahilo16alt+165 - Lpicbase2
+       movt    r0, :upper16:_datahilo16alt+165 - Lpicbase2
+       bx      lr
+	   
+	.data
+_datahilo16:	.long 0
+_datahilo16alt:	.long 0
+
+#endif
 	
 #endif
 
@@ -309,6 +417,17 @@ _test_branches:
 	
 	; call external + addend
 	bne	_external+16
+
+	.globl	_test_weak
+	.weak_definition _test_weak
+_test_weak:
+	nop
+	nop
+	
+_test_weak_call:
+	bl	_test_weak
+	bl	_test_weak+4
+
 #endif
 
 
@@ -316,7 +435,12 @@ _test_branches:
 #if __i386__
 	.text
 	.align 2
-	
+
+Ltest_data:
+	.long	1
+	.long	2
+	.long	3
+
 	.globl _test_loads
 _test_loads:
 	pushl	%ebp
@@ -347,6 +471,10 @@ Lpicbase:
 	# absolute lea of external + addend
 	leal	_ax+0x1900, %eax
 
+	# absolute load of _test_data with negative addend and local label
+	movl	Ltest_data-16(%edi),%eax
+	movq	Ltest_data-16(%edi),%mm4
+	
 	ret
 
 
@@ -406,6 +534,16 @@ c_2:
     sub          $(1), %ecx
     jcxz         c_2
 
+	.globl	_test_weak
+	.weak_definition _test_weak
+_test_weak:
+	nop
+	nop
+
+_test_weak_call:
+	call	_test_weak
+	call	_test_weak+1
+	
 #endif
 
 
@@ -483,10 +621,21 @@ _test_branches:
 	jne	_external+16
 	
 _byte_relocs:
+	# nonsense loop that creates byte branch relocation
     mov          $100, %ecx 
-c_1:  
+c_1:
     loop         _byte_relocs
     nop
+
+	.globl	_test_weak
+	.weak_definition _test_weak
+_test_weak:
+	nop
+	nop
+
+_test_weak_call:
+	call	_test_weak
+	call	_test_weak+1
 
 #endif
 
@@ -494,8 +643,8 @@ c_1:
 
 	# test that pointer-diff relocs are preserved
 	.text
-_test_diffs:
 	.align 2
+_test_diffs:
 Llocal2:
 	.long 0
 	.long Llocal2-_test_branches
@@ -511,6 +660,7 @@ Llocal2:
 #endif
 
 _foo: nop
+Lfoo: nop
 
 	.align 2	
 _distance_from_foo:
@@ -528,6 +678,10 @@ _distance_to_here:
 	.long	_foo - _distance_to_here
 	.long	_foo - _distance_to_here - 4 
 	.long	_foo - _distance_to_here - 12 
+	.long	Lfoo - _distance_to_here
+Ltohere:
+	.long	Lfoo - Ltohere
+	.long	Lfoo - Ltohere - 4
 	.long	0
 
 
@@ -545,6 +699,7 @@ L1:	.quad _test_branches - _test_diffs
   	.quad _test_branches - .
   	.quad _test_branches - L1
   	.quad L1 - _prev			
+	.quad _prev+100 - _test_branches
  #tests support for 32-bit absolute pointers
 	.long _prev
 	.long L1
@@ -570,11 +725,15 @@ _b:
 	.long	_test_calls+16
 	.long	_external
 	.long	_external+16
+	.long	_test_weak
+	.long	_test_weak+16
 #elif __ppc64__ || __x86_64__
 	.quad	_test_calls
 	.quad	_test_calls+16
 	.quad	_external
 	.quad	_external+16
+	.quad	_test_weak
+	.quad	_test_weak+16
 #endif
 
 	# test that reloc sizes are the same
