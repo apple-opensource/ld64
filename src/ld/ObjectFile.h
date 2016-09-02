@@ -66,7 +66,7 @@ public:
 										fForFinalLinkedImage(false), fNoEHLabels(false), fForStatic(false), fForDyld(false), fMakeTentativeDefinitionsReal(false), 
 										fWhyLoad(false), fRootSafe(false), fSetuidSafe(false),fDebugInfoStripping(kDebugInfoFull),
 										fImplicitlyLinkPublicDylibs(true),
-										fAddCompactUnwindEncoding(false), 
+										fAddCompactUnwindEncoding(true), 
 										fWarnCompactUnwind(false),
 										fRemoveDwarfUnwindIfCompactExists(false),
 										fMakeCompressedDyldInfo(false),
@@ -77,7 +77,7 @@ public:
 										fTraceOutputFile(NULL), fMacVersionMin(kMinMacVersionUnset), fIPhoneVersionMin(kMinIPhoneVersionUnset) {}
 	enum DebugInfoStripping { kDebugInfoNone, kDebugInfoMinimal, kDebugInfoFull };
 	enum MacVersionMin { kMinMacVersionUnset, k10_1, k10_2, k10_3, k10_4, k10_5, k10_6 };
-	enum IPhoneVersionMin { kMinIPhoneVersionUnset, k2_0, k2_1, k2_2, k3_0 };
+	enum IPhoneVersionMin { kMinIPhoneVersionUnset, k2_0, k3_0, k3_1 };
 
 	struct AliasPair {
 		const char*			realName;
@@ -282,7 +282,8 @@ class Atom
 public:
 	enum Scope { scopeTranslationUnit, scopeLinkageUnit, scopeGlobal };
 	enum DefinitionKind { kRegularDefinition, kWeakDefinition, kTentativeDefinition, kExternalDefinition, kExternalWeakDefinition, kAbsoluteSymbol };
-	enum ContentType { kUnclassifiedType, kCStringType, kCFIType, kLSDAType, kSectionStart, kSectionEnd };
+	enum ContentType { kUnclassifiedType, kCStringType, kCFIType, kLSDAType, kSectionStart, kSectionEnd, kBranchIsland, 
+					kLazyPointer, kStub, kNonLazyPointer, kLazyDylibPointer, kStubHelper };
 	enum SymbolTableInclusion { kSymbolTableNotIn, kSymbolTableIn, kSymbolTableInAndNeverStrip, kSymbolTableInAsAbsolute };
 
 	virtual Reader*							getFile() const = 0;
@@ -310,6 +311,7 @@ public:
 	virtual UnwindInfo::iterator			beginUnwind() { return NULL; }
 	virtual UnwindInfo::iterator			endUnwind() { return NULL; }
 	virtual Reference*						getLSDA() { return NULL; }
+	virtual Reference*						getFDE() { return NULL; }
 	virtual Atom*							getPersonalityPointer() { return NULL; }
 
 			uint64_t						getSectionOffset() const	{ return fSectionOffset; }

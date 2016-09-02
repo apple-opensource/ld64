@@ -34,10 +34,10 @@ LLVMGXX = /Developer/usr/bin/llvm-g++-4.2 -arch ${ARCH}
 run: all
 
 all:
-	${LLVMGCC} ${CCFLAGS} --emit-llvm main.c -c -o main.o
+	${LLVMGCC} ${CCFLAGS} --emit-llvm main.c -c -o main.o -fvisibility=hidden
 	${LLVMGCC} ${CCFLAGS} main.o -o main
 	nm main | grep  _foo | ${FAIL_IF_STDIN}
-	${LLVMGCC} ${CCFLAGS} main.o -o main2 -Wl,-mllvm -Wl,--disable-inlining 
+	${LLVMGCC} ${CCFLAGS} main.o -o main2 -fvisibility=hidden -Wl,-mllvm -Wl,--disable-inlining 
 	nm main2 | grep  _foo | ${FAIL_IF_EMPTY}
 	${PASS_IFF_GOOD_MACHO} main
 	

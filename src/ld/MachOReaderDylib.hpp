@@ -780,13 +780,18 @@ void Reader<A>::processIndirectLibraries(DylibHander* handler)
 						//fprintf(stderr, "processIndirectLibraries() implicitly linking %s\n", child->getInstallPath());
 						((Reader<A>*)child)->setImplicitlyLinked();
 					}
-					else
+					else if ( child->explicitlyLinked() || child->implicitlyLinked() ) {
+						//fprintf(stderr, "processIndirectLibraries() parent is not directly linked, but child is, so no need to re-export child\n");
+					}
+					else {
 						fReExportedChildren.push_back(child);
+						//fprintf(stderr, "processIndirectLibraries() parent is not directly linked, so parent=%s will re-export child=%s\n", this->getInstallPath(), it->path);
+					}
 				}
 				else {
 					// add all child's symbols to me
 					fReExportedChildren.push_back(child);
-					//fprintf(stderr, "processIndirectLibraries() parent=%s will re-export child=%s\n", this->getInstallPath(), it->path);
+					//fprintf(stderr, "processIndirectLibraries() child is not public, so parent=%s will re-export child=%s\n", this->getInstallPath(), it->path);
 				}
 			}
 			else if ( !fExplictReExportFound ) {

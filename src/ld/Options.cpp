@@ -103,7 +103,8 @@ Options::Options(int argc, const char* argv[])
 	  fDeadStripDylibs(false),  fAllowTextRelocs(false), fWarnTextRelocs(false), 
 	  fUsingLazyDylibLinking(false), fEncryptable(true), 
 	  fOrderData(true), fMarkDeadStrippableDylib(false),
-	  fMakeClassicDyldInfo(true), fMakeCompressedDyldInfo(true), fAllowCpuSubtypeMismatches(false), fSaveTempFiles(false)
+	  fMakeClassicDyldInfo(true), fMakeCompressedDyldInfo(true), fAllowCpuSubtypeMismatches(false),
+	  fUseSimplifiedDylibReExports(false), fSaveTempFiles(false)
 {
 	this->checkForClassic(argc, argv);
 	this->parsePreCommandLineEnvironmentSettings();
@@ -1261,41 +1262,24 @@ void Options::setIPhoneVersionMin(const char* version)
 {
 	if ( version == NULL )
 		throw "-iphoneos_version_min argument missing";
+	if ( ! isdigit(version[0]) )
+		throw "-iphoneos_version_min argument is not a number";
+	if ( version[1] != '.' )
+		throw "-iphoneos_version_min argument is missing period as second character";
+	if ( ! isdigit(version[2]) )
+		throw "-iphoneos_version_min argument is not a number";
 
-	if ( strncmp(version, "1.", 2) == 0 ) {
-		warning("pre-2.0 iPhone OS version not supported");
+	if ( version[0] == '2' )
 		fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_0;
-	}
-	else if ( strncmp(version, "2.", 2) == 0 ) {
-		int num = version[2] - '0';
-		switch ( num ) {
-			case 0:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_0;
-				break;
-			case 1:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_1;
-				break;
-			case 2:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_2;
-				break;
-			default:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_2;
-				break;
-		}
-	}
-	else if ( strncmp(version, "3.", 2) == 0 ) {
-		int num = version[2] - '0';
-		switch ( num ) {
-			case 0:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k3_0;
-				break;
-			default:
-				fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k3_0;
-				break;
-		}
-	}
+	else if ( (version[0] == '3') && (version[2] == '0') )
+		fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_0;
+	else if ( (version[0] == '3') && (version[2] >= '1') )
+		fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k3_1;
+	else if ( (version[0] >= '4')  )
+		fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k3_1;
 	else {
-		warning("unknown option to -iphoneos_version_min, not 2.x or 3.x");
+		fReaderOptions.fIPhoneVersionMin = ObjectFile::ReaderOptions::k2_0;
+		warning("unknown option to -iphoneos_version_min, not 2.x, 3.x, or 4.x");
 	}
 }
 
@@ -3006,7 +2990,7 @@ void Options::reconfigureDefaults()
 
 	// determine if info for shared region should be added
 	if ( fOutputKind == Options::kDynamicLibrary ) {
-		if ( minOS(ObjectFile::ReaderOptions::k10_5, ObjectFile::ReaderOptions::k3_0) )
+		if ( minOS(ObjectFile::ReaderOptions::k10_5, ObjectFile::ReaderOptions::k3_1) )
 			if ( !fPrebind )
 				if ( (strncmp(this->installPath(), "/usr/lib/", 9) == 0)
 					|| (strncmp(this->installPath(), "/System/Library/", 16) == 0) )
@@ -3091,7 +3075,9 @@ void Options::reconfigureDefaults()
 			break;
 	}
 	
-	// only use compressed LINKEDIT for x86_64 and i386
+	// only use compressed LINKEDIT for:
+	//			x86_64 and i386 on Mac OS X 10.6 or later
+	//			arm on iPhoneOS 3.1 or later
 	if ( fMakeCompressedDyldInfo ) {
 		switch (fArchitecture) {
 			case CPU_TYPE_I386:
@@ -3101,13 +3087,19 @@ void Options::reconfigureDefaults()
 				else if ( fReaderOptions.fMacVersionMin < ObjectFile::ReaderOptions::k10_5 )
 					fMakeCompressedDyldInfo = false;
 				break;
-			case CPU_TYPE_POWERPC:
             case CPU_TYPE_ARM:
+				if ( fReaderOptions.fIPhoneVersionMin >= ObjectFile::ReaderOptions::k3_1 ) 
+					fMakeClassicDyldInfo = false; 
+				else if ( fReaderOptions.fIPhoneVersionMin < ObjectFile::ReaderOptions::k3_1 )
+					fMakeCompressedDyldInfo = false;
+				break;
+			case CPU_TYPE_POWERPC:
 			case CPU_TYPE_POWERPC64:
 			default:
 				fMakeCompressedDyldInfo = false;
 		}
 	}
+	
 
 	// only use compressed LINKEDIT for final linked images
 	if ( fMakeCompressedDyldInfo ) {
@@ -3134,7 +3126,27 @@ void Options::reconfigureDefaults()
 	// only final linked images can not optimize zero fill sections
 	if ( fOutputKind == Options::kObjectFile )
 		fReaderOptions.fOptimizeZeroFill = true;
-		
+
+	// only dynamic final linked images should warn about use of commmons
+	if ( fWarnCommons ) {
+		switch ( fOutputKind ) {
+			case Options::kDynamicExecutable:
+			case Options::kDynamicLibrary:
+			case Options::kDynamicBundle:
+				break;
+			case Options::kPreload:
+			case Options::kStaticExecutable:
+			case Options::kObjectFile:
+			case Options::kDyld:
+			case Options::kKextBundle:
+				fWarnCommons = false;
+				break;
+		}
+	}
+	
+	// Mac OS X 10.5 and iPhoneOS 2.0 support LC_REEXPORT_DYLIB
+	if ( minOS(ObjectFile::ReaderOptions::k10_5, ObjectFile::ReaderOptions::k2_0) )
+		fUseSimplifiedDylibReExports = true;
 }
 
 void Options::checkIllegalOptionCombinations()
@@ -3231,12 +3243,12 @@ void Options::checkIllegalOptionCombinations()
 					warning("custom stack placement overlaps and will disable shared region");
 				break;
             case CPU_TYPE_ARM:
-				if ( fStackSize > 0xFFFFFFFF )
-					throw "-stack_size must be < 4G for 32-bit processes";
+				if ( fStackSize > 0x2F000000 )
+					throw "-stack_size must be < 752MB";
 				if ( fStackAddr == 0 )
-					fStackAddr = 0x30000000;
-                if ( fStackAddr > 0x40000000)
-                    throw "-stack_addr must be < 1G for arm";
+					fStackAddr = 0x2F000000;
+                if ( fStackAddr > 0x30000000)
+                    throw "-stack_addr must be < 0x30000000 for arm";
 			case CPU_TYPE_POWERPC64:
 			case CPU_TYPE_X86_64:
 				if ( fStackAddr == 0 ) {
@@ -3359,7 +3371,7 @@ void Options::checkIllegalOptionCombinations()
 		if ( fZeroPageSize != ULLONG_MAX ) {
 			for (std::vector<SegmentStart>::iterator it = fCustomSegmentAddresses.begin(); it != fCustomSegmentAddresses.end(); ++it) {
 				if ( (it->address >= 0) && (it->address < fZeroPageSize) )
-					throwf("-segaddr %s 0x%X conflicts with -pagezero_size", it->name, it->address);
+					throwf("-segaddr %s 0x%llX conflicts with -pagezero_size", it->name, it->address);
 			}
 		}
 		// verify no duplicates
@@ -3584,13 +3596,17 @@ void Options::checkForClassic(int argc, const char* argv[])
 void Options::gotoClassicLinker(int argc, const char* argv[])
 {
 	argv[0] = "ld_classic";
+	char rawPath[PATH_MAX];
 	char path[PATH_MAX];
 	uint32_t bufSize = PATH_MAX;
-	if ( _NSGetExecutablePath(path, &bufSize) != -1 ) {
-		char* lastSlash = strrchr(path, '/');
-		if ( lastSlash != NULL ) {
-			strcpy(lastSlash+1, "ld_classic");
-			execvp(path, (char**)argv);
+	if ( _NSGetExecutablePath(rawPath, &bufSize) != -1 ) {
+		if ( realpath(rawPath, path) != NULL ) {
+			char* lastSlash = strrchr(path, '/');
+			if ( lastSlash != NULL ) {
+				strcpy(lastSlash+1, "ld_classic");
+				argv[0] = path;
+				execvp(path, (char**)argv);
+			}
 		}
 	}
 	// in case of error in above, try searching for ld_classic via PATH
