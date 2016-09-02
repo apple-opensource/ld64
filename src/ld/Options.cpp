@@ -601,11 +601,6 @@ void Options::setArchitecture(cpu_type_t type, cpu_subtype_t subtype)
 	fArchitectureName = "unknown architecture";
 }
 
-bool Options::armUsesZeroCostExceptions() const
-{
-	return ( (fArchitecture == CPU_TYPE_ARM) && (fSubArchitecture == CPU_SUBTYPE_ARM_V7K) );
-}
-
 void Options::parseArch(const char* arch)
 {
 	if ( arch == NULL )
@@ -3894,26 +3889,8 @@ void Options::reconfigureDefaults()
 			}
 			break;
 		case CPU_TYPE_ARM:
-			if ( armUsesZeroCostExceptions() )  {
-				switch ( fOutputKind ) {
-					case Options::kObjectFile:
-					case Options::kStaticExecutable:
-					case Options::kPreload:
-					case Options::kKextBundle:
-						fAddCompactUnwindEncoding = false;
-						break;
-					case Options::kDyld:
-					case Options::kDynamicLibrary:
-					case Options::kDynamicBundle:
-					case Options::kDynamicExecutable:
-						fAddCompactUnwindEncoding = true;
-						break;
-				}
-			}
-			else {
-				fAddCompactUnwindEncoding = false;
-				fRemoveDwarfUnwindIfCompactExists = false;
-			}
+			fAddCompactUnwindEncoding = false;
+			fRemoveDwarfUnwindIfCompactExists = false;
 			break;
 		case 0:
 			// if -arch is missing, assume we don't want compact unwind info

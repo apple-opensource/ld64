@@ -370,8 +370,6 @@
 
 #define UNWIND_ARM64_DWARF_SECTION_OFFSET               0x00FFFFFF
 
-#define UNW_ARM_D31 287
-
 
 #ifndef LC_SOURCE_VERSION
 	#define LC_SOURCE_VERSION 0x2A
@@ -444,26 +442,6 @@
 	#define CPU_SUBTYPE_X86_64_H	((cpu_subtype_t) 8) 
 #endif	
 
-#define UNWIND_ARM_MODE_MASK                          0x0F000000
-#define UNWIND_ARM_MODE_FRAME                         0x01000000
-#define UNWIND_ARM_MODE_FRAME_D                       0x02000000
-#define UNWIND_ARM_MODE_DWARF                         0x04000000
- 
-#define  UNWIND_ARM_FRAME_STACK_ADJUST_MASK           0x00C00000
-
-#define UNWIND_ARM_FRAME_FIRST_PUSH_R4                0x00000001
-#define UNWIND_ARM_FRAME_FIRST_PUSH_R5                0x00000002
-#define UNWIND_ARM_FRAME_FIRST_PUSH_R6                0x00000004
-  
-#define UNWIND_ARM_FRAME_SECOND_PUSH_R8               0x00000008
-#define UNWIND_ARM_FRAME_SECOND_PUSH_R9               0x00000010
-#define UNWIND_ARM_FRAME_SECOND_PUSH_R10              0x00000020
-#define UNWIND_ARM_FRAME_SECOND_PUSH_R11              0x00000040
-#define UNWIND_ARM_FRAME_SECOND_PUSH_R12              0x00000080
- 
-#define UNWIND_ARM_FRAME_D_REG_COUNT_MASK             0x00000F00
- 
-#define UNWIND_ARM_DWARF_SECTION_OFFSET               0x00FFFFFF
 
 struct ArchInfo {
 	const char*			archName;

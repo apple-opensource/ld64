@@ -330,14 +330,17 @@ void Resolver::doLinkerOption(const std::vector<const char*>& linkerOption, cons
 	}
 }
 
-static void userReadableSwiftVersion(uint8_t value, char versionString[32])
+static void userReadableSwiftVersion(uint8_t value, char versionString[64])
 {
 	switch (value) {
 		case 1:
 			strcpy(versionString, "1.0");
 			break;
+		case 2:
+			strcpy(versionString, "1.1");
+			break;
 		default:
-			sprintf(versionString, "0x%02X", value);
+			sprintf(versionString, "unknown ABI version 0x%02X", value);
 	}
 }
 
@@ -400,8 +403,8 @@ void Resolver::doFile(const ld::File& file)
 				_internal.swiftVersion = file.swiftVersion();
 			}
 			else if ( file.swiftVersion() != _internal.swiftVersion ) {
-				char fileVersion[32];
-				char otherVersion[32];
+				char fileVersion[64];
+				char otherVersion[64];
 				userReadableSwiftVersion(file.swiftVersion(), fileVersion);
 				userReadableSwiftVersion(_internal.swiftVersion, otherVersion);
 				if ( file.swiftVersion() > _internal.swiftVersion ) {
@@ -1547,7 +1550,6 @@ void Resolver::linkTimeOptimize()
 	optOpt.needsUnwindInfoSection		= _options.needsUnwindInfoSection();
 	optOpt.keepDwarfUnwind				= _options.keepDwarfUnwind();
 	optOpt.verboseOptimizationHints     = _options.verboseOptimizationHints();
-	optOpt.armUsesZeroCostExceptions    = _options.armUsesZeroCostExceptions();
 	optOpt.arch							= _options.architecture();
 	optOpt.mcpu							= _options.mcpuLTO();
 	optOpt.llvmOptions					= &_options.llvmOptions();

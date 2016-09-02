@@ -57,7 +57,6 @@ struct OptimizeOptions {
 	bool								needsUnwindInfoSection; 
 	bool								keepDwarfUnwind; 
 	bool								verboseOptimizationHints;
-	bool								armUsesZeroCostExceptions;
 	cpu_type_t							arch;
 	const char*							mcpu;
 	const std::vector<const char*>*		llvmOptions;
