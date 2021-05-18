@@ -4914,6 +4914,10 @@ int OutputFile::compressedOrdinalForAtom(const ld::Atom* target) const
 	// regular ordinal
 	const ld::dylib::File* dylib = dynamic_cast<const ld::dylib::File*>(target->file());
 	if ( dylib != NULL ) {
+		// Handle -dynamic_lookup_library
+		if ( dylib->forcedDynamicLookupLinked() )
+			return BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
+
 		std::map<const ld::dylib::File*, int>::const_iterator pos = _dylibToOrdinal.find(dylib);
 		if ( pos != _dylibToOrdinal.end() )
 			return pos->second;
