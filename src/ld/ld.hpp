@@ -470,7 +470,7 @@ namespace dylib {
 												: ld::File(pth, modTime, ord, Dylib), _dylibInstallPath(NULL), _frameworkName(NULL),
 												_dylibTimeStamp(0), _dylibCurrentVersion(0), _dylibCompatibilityVersion(0),
 												_explicitlyLinked(false), _implicitlyLinked(false), _speculativelyLoaded(false),
-												_forcedWeakLinked(false), _needed(false), _reExported(false),
+												_forcedWeakLinked(false), _needed(false), _forcedDynamicLookupLinked(false), _reExported(false),
 												_upward(false), _dead(false) { }
 				const char*					installPath() const			{ return _dylibInstallPath; }
 				const char*					frameworkName() const		{ return _frameworkName; }
@@ -489,7 +489,8 @@ namespace dylib {
 				bool						forcedWeakLinked() const		{ return _forcedWeakLinked; }
 				void						setNeededDylib()				{ _needed = true; }
 				bool						neededDylib() const				{ return _needed; }
-
+				void						setForcedDynamicLookupLinked()		{ _forcedDynamicLookupLinked = true; }
+				bool						forcedDynamicLookupLinked() const	{ return _forcedDynamicLookupLinked; }
 				void						setWillBeReExported()			{ _reExported = true; }
 				bool						willBeReExported() const		{ return _reExported; }
 				void						setWillBeUpwardDylib()			{ _upward = true; }
@@ -525,6 +526,7 @@ namespace dylib {
 		bool								_speculativelyLoaded;
 		bool								_forcedWeakLinked;
 		bool								_needed;
+		bool								_forcedDynamicLookupLinked;
 		bool								_reExported;
 		bool								_upward;
 		bool								_dead;

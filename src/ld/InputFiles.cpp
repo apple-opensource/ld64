@@ -1099,6 +1099,8 @@ ld::File* InputFiles::addDylib(ld::dylib::File* reader, const Options::FileInfo&
 	// store options about how dylib will be used in dylib itself
 	if ( info.options.fWeakImport )
 		reader->setForcedWeakLinked();
+	if ( info.options.fDynamicLookupImport )
+		reader->setForcedDynamicLookupLinked();
 	if ( info.options.fReExport )
 		reader->setWillBeReExported();
 	if ( info.options.fUpward ) {
